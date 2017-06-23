@@ -18,7 +18,7 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <groupId>org.apache.parquet</groupId>
+    <groupId>net.skyscanner.parquet</groupId>
     <artifactId>parquet</artifactId>
     <relativePath>../pom.xml</relativePath>
     <version>1.9.1-SNAPSHOT</version>
@@ -38,15 +38,15 @@
       <url>http://conjars.org/repo</url>
     </repository>
   </repositories>
-  
+
   <dependencies>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-column</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-hadoop</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -57,7 +57,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-jackson</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -67,14 +67,14 @@
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-column</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-thrift</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -85,7 +85,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-cascading</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -95,7 +95,7 @@
       <version>4.7.0</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-thrift</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>

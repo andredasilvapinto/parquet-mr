@@ -153,22 +153,22 @@ The current release is version `1.8.1`
 ```xml
   <dependencies>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-common</artifactId>
       <version>1.8.1</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-encoding</artifactId>
       <version>1.8.1</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-column</artifactId>
       <version>1.8.1</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.parquet</groupId>
+      <groupId>net.skyscanner.parquet</groupId>
       <artifactId>parquet-hadoop</artifactId>
       <version>1.8.1</version>
     </dependency>

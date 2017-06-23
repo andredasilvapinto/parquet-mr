@@ -1,0 +1,18 @@
+build:
+  default:
+    image: maven:latest
+    commands:
+      - wget "https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
+      - unzip protoc-3.2.0-linux-x86_64.zip -d protoc3
+      - mv protoc3/bin/protoc /usr/bin/protoc
+      - wget "http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz"
+      - tar -xzf thrift-0.7.0.tar.gz
+      - cd thrift-0.7.0
+      - apt-get update
+      - apt-get install -y build-essential
+      - chmod +x configure
+      - ./configure --with-boost=/usr/local --with-libevent=/usr/local --without-lua --without-php --without-cpp --without-c_glib --without-python --without-ruby
+      - make
+      - make install
+      - cd ..
+      - mvn install
