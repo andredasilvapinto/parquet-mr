@@ -5,6 +5,7 @@ build:
       - wget "https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
       - unzip protoc-3.2.0-linux-x86_64.zip -d protoc3
       - mv protoc3/bin/protoc /usr/bin/protoc
+      - rm -rf protoc3
       - wget "http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz"
       - tar -xzf thrift-0.7.0.tar.gz
       - cd thrift-0.7.0
@@ -15,4 +16,5 @@ build:
       - make
       - make install
       - cd ..
-      - mvn install
+      - rm -rf thrift-0.7.0
+      - mvn install || cat /drone/src/git.prod.skyscanner.local/data-platform/parquet-mr-fork/target/rat.txt
