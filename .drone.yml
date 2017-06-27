@@ -1,10 +1,14 @@
 build:
   default:
     image: maven:latest
+    environment:
+      - ARTIFACTORY_USERNAME=$$roadrunnersArtifactoryUsername
+      - ARTIFACTORY_PASSWORD=$$roadrunnersArtifactoryPassword
     commands:
       - wget "https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
       - unzip protoc-3.2.0-linux-x86_64.zip -d protoc3
       - mv protoc3/bin/protoc /usr/bin/protoc
+      - rm protoc-3.2.0-linux-x86_64.zip
       - rm -rf protoc3
       - wget "http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz"
       - tar -xzf thrift-0.7.0.tar.gz
@@ -16,5 +20,6 @@ build:
       - make
       - make install
       - cd ..
+      - rm thrift-0.7.0.tar.gz
       - rm -rf thrift-0.7.0
-      - mvn install || cat /drone/src/git.prod.skyscanner.local/data-platform/parquet-mr-fork/target/rat.txt
+      - mvn deploy -Dartifactory.username=$ARTIFACTORY_USERNAME -Dartifactory.password=$ARTIFACTORY_PASSWORD --settings mvn-settings.xml
