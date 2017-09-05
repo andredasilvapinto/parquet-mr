@@ -20,12 +20,19 @@ package org.apache.parquet.proto;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.ProtocolStringList;
 import com.google.protobuf.TextFormat;
 import com.twitter.elephantbird.util.Protobufs;
+import org.apache.commons.net.util.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.BadConfigurationException;
 import org.apache.parquet.hadoop.api.WriteSupport;
@@ -51,8 +58,11 @@ import java.util.Map;
 public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProtoWriteSupport.class);
+
   public static final String PB_CLASS_WRITE = "parquet.proto.writeClass";
-  private static Descriptor descriptor;
+  private static final String PB_FILE_DESCRIPTOR_SET_WRITE = "parquet.proto.writeFileDescriptorSets";
+  private static final String PB_PROTO_FILE_WRITE = "parquet.proto.writeProtoFile";
+  private static final String PB_MESSAGE_TYPE_WRITE = "parquet.proto.writeMessageType";
 
   private RecordConsumer recordConsumer;
   private Class<? extends Message> protoMessage;
@@ -74,8 +84,22 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
     configuration.setClass(PB_CLASS_WRITE, protoClass, Message.class);
   }
 
-  public static void setDescriptor(Descriptor descriptor) {
-    ProtoWriteSupport.descriptor = descriptor;
+  public static void setSchema(Configuration configuration, String fileDescriptorBase64, String protoFile, String messageType) {
+    configuration.set(PB_FILE_DESCRIPTOR_SET_WRITE, fileDescriptorBase64);
+    configuration.set(PB_PROTO_FILE_WRITE, protoFile);
+    configuration.set(PB_MESSAGE_TYPE_WRITE, messageType);
+  }
+
+  public static String getFileDescriptorSet(Configuration configuration) {
+    return configuration.get(PB_FILE_DESCRIPTOR_SET_WRITE);
+  }
+
+  public static String getProtoFile(Configuration configuration) {
+    return configuration.get(PB_PROTO_FILE_WRITE);
+  }
+
+  public static String getMessageType(Configuration configuration) {
+    return configuration.get(PB_MESSAGE_TYPE_WRITE);
   }
 
   /**
@@ -102,25 +126,27 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
 
   @Override
   public WriteContext init(Configuration configuration) {
-
     MessageType rootSchema;
     Descriptors.Descriptor messageDescriptor;
-    Map<String, String> extraMetaData = new HashMap<String, String>();
+    Map<String, String> extraMetaData = new HashMap<>();
 
-    if (descriptor != null && protoMessage !=null) {
+    final String descriptorStr = getFileDescriptorSet(configuration);
+
+    if (descriptorStr != null && protoMessage != null) {
       String msg = "Protocol buffer class and descriptor specified.";
       String hint = " Please only specify one or the other.";
       throw new BadConfigurationException(msg + hint);
-    } else if (descriptor != null) {
-      messageDescriptor = descriptor;
-    } else{
+    } else if (descriptorStr != null) {
+      messageDescriptor = getDescriptorFromString(descriptorStr, getProtoFile(configuration),
+        getMessageType(configuration));
+    } else {
       if (protoMessage == null) {
         Class<? extends Message> pbClass = configuration.getClass(PB_CLASS_WRITE, null, Message.class);
         if (pbClass == null) {
           String msg = "Protocol buffer class not specified.";
           String hint = " Please use method ProtoParquetOutputFormat.setProtobufClass(...) or other similar method.";
           throw new BadConfigurationException(msg + hint);
-        }else{
+        } else {
           protoMessage = pbClass;
         }
 
@@ -135,11 +161,8 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
 
     this.messageWriter = new MessageWriter(messageDescriptor, rootSchema);
 
-
-
     return new WriteContext(rootSchema, extraMetaData);
   }
-
 
 
   class FieldWriter {
@@ -367,4 +390,34 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
     return TextFormat.printToString(asProto);
   }
 
+  private static Descriptor getDescriptorFromString(String schema, String protoFile, String messageType) {
+    try {
+      final FileDescriptorSet fdSet = FileDescriptorSet.parseFrom(Base64.decodeBase64(schema));
+
+      final Map<String, FileDescriptorProto> fdMap = new HashMap<>(fdSet.getFileCount());
+      for (FileDescriptorProto fdp : fdSet.getFileList()) {
+        fdMap.put(fdp.getName(), fdp);
+      }
+
+      final FileDescriptor fd = buildFd(fdMap.get(protoFile), fdMap);
+
+      return fd.findMessageTypeByName(messageType);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static FileDescriptor buildFd(final FileDescriptorProto fdProto,
+    final Map<String, FileDescriptorProto> fdMap) {
+    final ProtocolStringList dependencyList = fdProto.getDependencyList();
+    final FileDescriptor[] deps = new FileDescriptor[dependencyList.size()];
+    for (int i = 0; i < dependencyList.size(); i++) {
+      deps[i] = buildFd(fdMap.get(dependencyList.get(i)), fdMap);
+    }
+    try {
+      return FileDescriptor.buildFrom(fdProto, deps);
+    } catch (DescriptorValidationException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

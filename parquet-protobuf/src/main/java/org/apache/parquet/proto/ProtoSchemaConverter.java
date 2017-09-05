@@ -53,7 +53,6 @@ public class ProtoSchemaConverter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProtoSchemaConverter.class);
 
-
   public MessageType convert(Descriptors.Descriptor descriptor) {
     LOG.debug("Converting protocol buffer descriptor \"" + descriptor.getName() + "\" to parquet schema.");
     MessageType messageType = convertDescriptorToParquetSchema(descriptor);
@@ -69,7 +68,7 @@ public class ProtoSchemaConverter {
   public MessageType convertDescriptorToParquetSchema(Descriptor descriptor) {
     MessageType messageType =
         convertFields(Types.buildMessage(), descriptor.getFields())
-            .named(descriptor.getFullName());
+        .named(descriptor.getFullName());
     LOG.debug("Converter info:\n " + descriptor.toProto() + " was converted to \n" + messageType);
     return messageType;
   }

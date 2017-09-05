@@ -18,7 +18,6 @@
  */
 package org.apache.parquet.proto;
 
-import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageOrBuilder;
 import org.apache.hadoop.mapreduce.Job;
@@ -47,7 +46,7 @@ import org.apache.parquet.hadoop.util.ContextUtil;
  * final Job job = new Job(conf, "Parquet writing job");
  * job.setOutputFormatClass(ProtoParquetOutputFormat.class);
  * ProtoParquetOutputFormat.setOutputPath(job, parquetPath);
- * ProtoParquetOutputFormat.setProtobufDescriptor(descriptor);
+ * ProtoParquetOutputFormat.setProtobufSchema(fileDescriptorSetBase64, protoFile, messageType);
  *
  * </pre>
  *
@@ -59,8 +58,8 @@ public class ProtoParquetOutputFormat<T extends MessageOrBuilder> extends Parque
     ProtoWriteSupport.setSchema(ContextUtil.getConfiguration(job), protoClass);
   }
 
-  public static void setProtobufDescriptor(Descriptors.Descriptor descriptor) {
-    ProtoWriteSupport.setDescriptor(descriptor);
+  public static void setProtobufSchema(Job job, String descriptorBase64, String protoFile, String messageType) {
+    ProtoWriteSupport.setSchema(ContextUtil.getConfiguration(job), descriptorBase64, protoFile, messageType);
   }
 
   public ProtoParquetOutputFormat(Class<? extends Message> msg) {
