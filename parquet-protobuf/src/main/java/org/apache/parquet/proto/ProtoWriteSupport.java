@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,11 @@ package org.apache.parquet.proto;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.MapEntry;
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.TextFormat;
@@ -203,11 +207,11 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
 
     private GroupType getGroupType(Type type) {
       if (type.getOriginalType() == OriginalType.LIST) {
-        return type.asGroupType().getType("list").asGroupType();
+        return type.asGroupType().getType("list").asGroupType().getType("element").asGroupType();
       }
 
       if (type.getOriginalType() == OriginalType.MAP) {
-        return type.asGroupType().getType("map").asGroupType().getType("value").asGroupType();
+        return type.asGroupType().getType("key_value").asGroupType().getType("value").asGroupType();
       }
 
       return type.asGroupType();
@@ -295,13 +299,21 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
       recordConsumer.startField("list", 0); // This is the wrapper group for the array field
       for (Object listEntry: list) {
         recordConsumer.startGroup();
-        if (isPrimitive(listEntry)) {
-          recordConsumer.startField("element", 0);
+
+        recordConsumer.startField("element", 0); // This is the mandatory inner field
+
+        if (!isPrimitive(listEntry)) {
+          recordConsumer.startGroup();
         }
+
         fieldWriter.writeRawValue(listEntry);
-        if (isPrimitive(listEntry)) {
-          recordConsumer.endField("element", 0);
+
+        if (!isPrimitive(listEntry)) {
+          recordConsumer.endGroup();
         }
+
+        recordConsumer.endField("element", 0);
+
         recordConsumer.endGroup();
       }
       recordConsumer.endField("list", 0);
@@ -369,15 +381,21 @@ public class ProtoWriteSupport<T extends MessageOrBuilder> extends WriteSupport<
     final void writeRawValue(Object value) {
       recordConsumer.startGroup();
 
-      recordConsumer.startField("map", 0); // This is the wrapper group for the map field
-      for(MapEntry<?, ?> entry : (Collection<MapEntry<?, ?>>) value) {
+      recordConsumer.startField("key_value", 0); // This is the wrapper group for the map field
+      for (Message msg : (Collection<Message>) value) {
         recordConsumer.startGroup();
-        keyWriter.writeField(entry.getKey());
-        valueWriter.writeField(entry.getValue());
+
+        final Descriptor descriptorForType = msg.getDescriptorForType();
+        final FieldDescriptor keyDesc = descriptorForType.findFieldByName("key");
+        final FieldDescriptor valueDesc = descriptorForType.findFieldByName("value");
+
+        keyWriter.writeField(msg.getField(keyDesc));
+        valueWriter.writeField(msg.getField(valueDesc));
+
         recordConsumer.endGroup();
       }
 
-      recordConsumer.endField("map", 0);
+      recordConsumer.endField("key_value", 0);
 
       recordConsumer.endGroup();
     }

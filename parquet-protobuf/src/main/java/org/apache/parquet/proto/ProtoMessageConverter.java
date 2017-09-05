@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -374,7 +374,6 @@ class ProtoMessageConverter extends GroupConverter {
    */
   final class ListConverter extends GroupConverter {
     private final Converter converter;
-    private final boolean listOfMessage;
 
     public ListConverter(Message.Builder parentBuilder, Descriptors.FieldDescriptor fieldDescriptor, Type parquetType) {
       OriginalType originalType = parquetType.getOriginalType();
@@ -382,13 +381,11 @@ class ProtoMessageConverter extends GroupConverter {
         throw new ParquetDecodingException("Expected LIST wrapper. Found: " + originalType + " instead.");
       }
 
-      listOfMessage = fieldDescriptor.getJavaType() == JavaType.MESSAGE;
-
       Type parquetSchema;
       if (parquetType.asGroupType().containsField("list")) {
         parquetSchema = parquetType.asGroupType().getType("list");
         if (parquetSchema.asGroupType().containsField("element")) {
-          parquetSchema.asGroupType().getType("element");
+          parquetSchema = parquetSchema.asGroupType().getType("element");
         }
       } else {
         throw new ParquetDecodingException("Expected list but got: " + parquetType);
@@ -401,10 +398,6 @@ class ProtoMessageConverter extends GroupConverter {
     public Converter getConverter(int fieldIndex) {
       if (fieldIndex > 0) {
         throw new ParquetDecodingException("Unexpected multiple fields in the LIST wrapper");
-      }
-
-      if (listOfMessage) {
-        return converter;
       }
 
       return new GroupConverter() {
@@ -447,10 +440,10 @@ class ProtoMessageConverter extends GroupConverter {
       }
 
       Type parquetSchema;
-      if (parquetType.asGroupType().containsField("map")){
-        parquetSchema = parquetType.asGroupType().getType("map");
+      if (parquetType.asGroupType().containsField("key_value")){
+        parquetSchema = parquetType.asGroupType().getType("key_value");
       } else {
-        throw new ParquetDecodingException("Expected map but got: " + parquetType);
+        throw new ParquetDecodingException("Expected key_value but got: " + parquetType);
       }
 
       converter = newMessageConverter(parentBuilder, fieldDescriptor, parquetSchema);
